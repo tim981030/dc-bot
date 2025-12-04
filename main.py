@@ -23,6 +23,10 @@ async def on_message(message):
     if str(n) in message.content.lower():
         n+=1
         await message.add_reaction("✅")
+    else:
+        n=1
+        await message.add_reaction("❌")
+        await message.channel.send(f"wrong")
         
     await bot.process_commands(message)
     
