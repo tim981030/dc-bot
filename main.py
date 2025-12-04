@@ -5,27 +5,14 @@ from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
 
-# Load Discord token
+# --- Discord Token ---
 load_dotenv()
-TOKEN = os.getenv("token")
+token = os.getenv("token")  # 確認 Render 環境變數也是 token（小寫）
 
-# --- Flask Web Service ---
-app = Flask("")
+if token is None:
+    raise ValueError("Discord token not found! Please set 'token' in environment variables.")
 
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-def run_flask():
-    port = int(os.environ["PORT"])
-    print(f"Flask running on port {port}")
-    app.run(host="0.0.0.0", port=port)
-
-flask_thread = Thread(target=run_flask)
-flask_thread.daemon = True
-flask_thread.start()
-
-# --- Discord Bot ---
+# --- Discord Bot Setup ---
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guild_messages = True
@@ -49,5 +36,22 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
+# --- Flask Web Service for Render ---
+app = Flask("")
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get("PORT"))
+    print(f"Flask running on port {port}")
+    app.run(host="0.0.0.0", port=port)
+
+flask_thread = Thread(target=run_flask)
+flask_thread.daemon = True
+flask_thread.start()
+
+# --- Run Discord Bot ---
 print("Starting Discord bot...")
-bot.run(TOKEN)
+bot.run(token)
