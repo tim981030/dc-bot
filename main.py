@@ -31,7 +31,7 @@ async def on_message(message):
         return
 
     # 限定頻道
-    if message.channel.id != 1446132825127387288:
+    if message.channel.id != 1446455483689992305:
         return
 
     content = message.content
@@ -65,3 +65,4 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
