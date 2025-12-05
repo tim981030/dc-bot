@@ -1,22 +1,25 @@
 import discord
 from discord.ext import commands
 import os
-from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
 
-print("TOKEN =", repr(token))
-# --- Discord Token ---
-load_dotenv()
-token = os.getenv("token")  # Render 環境變數也要叫 token（小寫）
-if token is None:
-    raise ValueError("Discord token not found! Set 'token' in environment variables.")
+# ---------------------------
+# 讀取 Render 環境變數 token
+# ---------------------------
+token = os.getenv("token")  # 必須與 Render 的 Key 完全一致
+print("Loaded token:", repr(token))  # Debug：可在 Render Logs 看到是否讀到 token
 
-# --- Discord Bot Setup ---
+if not token:
+    raise ValueError("環境變數 'token' 未設定，請在 Render → Environment Variables 添加。")
+
+# ---------------------------
+# Discord Bot 設定
+# ---------------------------
 intents = discord.Intents.default()
 intents.message_content = True
-intents.guild_messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
 n = 1
 
 @bot.event
@@ -24,6 +27,7 @@ async def on_message(message):
     global n
     if message.author.bot:
         return
+
     if str(n) in message.content.lower():
         n += 1
         await message.add_reaction("✅")
@@ -31,25 +35,27 @@ async def on_message(message):
         n = 1
         await message.add_reaction("❌")
         await message.channel.send("wrong")
+
     await bot.process_commands(message)
 
-# --- Flask Web Service for Render ---
-app = Flask("")
+# ---------------------------
+# Flask Web Server（給 Render 維持存活）
+# ---------------------------
+app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot is running!"
+    return "Bot is running on Render!"
 
 def run_flask():
-    port = int(os.environ["PORT"])
+    port = int(os.environ.get("PORT", 10000))  # Render 預設會給 PORT
     print(f"Flask running on port {port}")
     app.run(host="0.0.0.0", port=port)
 
-flask_thread = Thread(target=run_flask)
-flask_thread.daemon = True
-flask_thread.start()
+Thread(target=run_flask, daemon=True).start()
 
-# --- Run Discord Bot ---
+# ---------------------------
+# 啟動 Discord Bot
+# ---------------------------
 print("Starting Discord bot...")
 bot.run(token)
-
