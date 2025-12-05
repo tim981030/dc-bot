@@ -46,14 +46,6 @@ async def on_message(message):
     user_id = message.author.id
     content = message.content.strip()
 
-    # 3. 檢查是否為「自幹」行為 (同一個人連續發訊息)
-    if user_id == last_user_id:
-        await message.add_reaction("❌")
-        await message.channel.send(f"森林叫你別自幹")
-        n = 1
-        last_user_id = None
-        return  # 結束函數，不往下判斷數字
-
     # 4. 檢查訊息內容是否為純數字 (修正判斷錯誤問題)
     if not content.isdigit():
         # 如果訊息不是純數字，則忽略，不觸發錯誤重置
@@ -64,6 +56,16 @@ async def on_message(message):
         current_n = int(content)
     except ValueError:
         return # 再次確保轉換成功
+
+    # 3. 檢查是否為「自幹」行為 (同一個人連續發訊息)
+    if user_id == last_user_id:
+        await message.add_reaction("❌")
+        await message.channel.send(f"森林叫你別自幹")
+        n = 1
+        last_user_id = None
+        return  # 結束函數，不往下判斷數字
+
+    
 
     # 5. 判斷數字是否正確
     if current_n == n:
@@ -107,5 +109,6 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
 
 
