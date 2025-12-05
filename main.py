@@ -1,4 +1,4 @@
-``` import discord
+import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
@@ -53,4 +53,4 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
-```
+
