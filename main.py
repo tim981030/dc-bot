@@ -34,7 +34,8 @@ channel_id = 1446455483689992305
 async def on_message(message):
     global n
     global last_user_id
-
+    if message.content == "早安":
+        await message.channel.send(f"早安啊")
     # 1. 忽略 Bot 自己的訊息
     if message.author.bot:
         return
@@ -65,7 +66,7 @@ async def on_message(message):
         last_user_id = None
         return  # 結束函數，不往下判斷數字
 
-    
+
 
     # 5. 判斷數字是否正確
     if current_n == n:
@@ -109,6 +110,5 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
-
 
 
