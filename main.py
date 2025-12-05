@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
 
+print("TOKEN =", repr(token))
 # --- Discord Token ---
 load_dotenv()
 token = os.getenv("token")  # Render 環境變數也要叫 token（小寫）
@@ -51,3 +52,4 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
