@@ -7,7 +7,7 @@ from threading import Thread
 
 # --- Discord Token ---
 load_dotenv()
-token = os.getenv("token")  # 確認 Render 環境變數也是 token（小寫）
+token = os.getenv("token")  # Render 環境變數名稱要一致
 
 if token is None:
     raise ValueError("Discord token not found! Please set 'token' in environment variables.")
@@ -21,40 +21,43 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # --- 遊戲邏輯變數 ---
 n = 1
-last_user_id = None  # 儲存上一次發訊息的使用者 ID
-channel_id = 1446455483689992305  # 設定要監控的頻道 ID
+last_user_id = None
+channel_id = 1446455483689992305  # 要監控的頻道 ID
 
 @bot.event
 async def on_message(message):
     global n
     global last_user_id
 
-    # 忽略自己發的訊息
     if message.author.bot:
         return
 
-    # 只監控特定頻道
     if message.channel.id != channel_id:
         return
 
-    # 檢查同一個人不能連續發訊息
+    # 同一個人連續發訊息 → 自幹
     if message.author.id == last_user_id:
-        await message.channel.send("森林叫你別自幹")
         await message.add_reaction("❌")
-        return
-    else:
-        last_user_id = message.author.id
+        await message.channel.send("森林叫你別自幹")
+        # 自幹也要重置 n 和 last_user_id
+        n = 1
+        last_user_id = None
+        return  # 結束函數，不往下判斷數字
 
-    # 檢查訊息是否為正確數字
+    # 判斷數字是否正確
     if message.content.strip() == str(n):
         n += 1
         await message.add_reaction("✅")
     else:
         n = 1
+        last_user_id = None  # 重置自幹判定
         await message.add_reaction("❌")
         await message.channel.send("錯了 你將受到森林的嚴厲斥責")
+        return
 
-    # 讓指令仍然可以運作
+    # 更新上一次發訊息者
+    last_user_id = message.author.id
+
     await bot.process_commands(message)
 
 
@@ -66,7 +69,7 @@ def home():
     return "Bot is running!"
 
 def run_flask():
-    port = int(os.environ.get("PORT", 5000))  # 如果沒有設定 PORT，預設 5000
+    port = int(os.environ.get("PORT", 5000))
     print(f"Flask running on port {port}")
     app.run(host="0.0.0.0", port=port)
 
