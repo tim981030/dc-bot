@@ -33,7 +33,7 @@ async def on_message(message):
     else:
         n = 1
         await message.add_reaction("❌")
-        await message.channel.send("wrong")
+        await message.channel.send("錯了 你將受到森林的嚴厲斥責")
 
     await bot.process_commands(message)
 # --- Flask Web Service for Render ---
@@ -55,6 +55,7 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
 
 
 
