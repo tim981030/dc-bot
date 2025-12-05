@@ -7,7 +7,7 @@ from threading import Thread
 
 # --- Discord Token ---
 load_dotenv()
-token = os.getenv("token")
+token = os.getenv("token")  # 確認 Render 環境變數也是 token（小寫）
 
 if token is None:
     raise ValueError("Discord token not found! Please set 'token' in environment variables.")
@@ -18,34 +18,35 @@ intents.message_content = True
 intents.guild_messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-# 記數變數
-n = 1
-
+n=1
+nm= " "
 @bot.event
 async def on_message(message):
     global n
-
-    # 忽略機器人訊息
+    global nm
+    content = message.content
     if message.author.bot:
         return
-
-    # 限定頻道
-    if message.channel.id != 1446455483689992305 and message.channel.id != 1446132825127387288:
+    if message.channel.id != 1446455483689992305:
         return
-
-    content = message.content
-
-    # 判斷數字順序
+    if message.author.name==nm:
+        await message.channel.send("森林叫你別自幹")
+        await message.add_reaction("❌")
+        nm=" "
+        n=1
+        return
+    else:
+        nm=message.author.name
+    
     if str(n) == content:
         n += 1
         await message.add_reaction("✅")
-
     else:
         n = 1
         await message.add_reaction("❌")
         await message.channel.send("錯了 你將受到森林的嚴厲斥責")
 
+    await bot.process_commands(message)
 # --- Flask Web Service for Render ---
 app = Flask("")
 
@@ -67,3 +68,11 @@ print("Starting Discord bot...")
 bot.run(token)
 
 
+
+
+
+
+
+
+
+  
