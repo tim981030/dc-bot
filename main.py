@@ -49,7 +49,7 @@ async def on_message(message):
     # 3. 檢查是否為「自幹」行為 (同一個人連續發訊息)
     if user_id == last_user_id:
         await message.add_reaction("❌")
-        await message.channel.send(f"森林叫你別自幹！正確數字是 {n}，你重置了遊戲。")
+        await message.channel.send(f"森林叫你別自幹")
         n = 1
         last_user_id = None
         return  # 結束函數，不往下判斷數字
@@ -78,7 +78,7 @@ async def on_message(message):
         n = 1  # 數字重置為 1
         last_user_id = None  # 重置自幹判定
         await message.add_reaction("❌")
-        await message.channel.send(f"錯了！你將受到森林的嚴厲斥責！正確答案是 **{correct_n}**，但你輸入了 **{current_n}**。遊戲重置。")
+        await message.channel.send(f"錯了！你將受到森林的嚴厲斥責！")
 
     # 因為所有邏輯都在 on_message 處理，故不再呼叫 bot.process_commands(message)
 
@@ -107,4 +107,5 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
 
