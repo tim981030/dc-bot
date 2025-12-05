@@ -1,27 +1,24 @@
-import discord
+``` import discord
 from discord.ext import commands
 import os
+from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
 
-# ---------------------------
-# 讀取 Render 環境變數 token
-# ---------------------------
-token = os.getenv("token")  # 必須與 Render 的 Key 完全一致
-print("Loaded token:", repr(token))  # Debug：可在 Render Logs 看到是否讀到 token
+# --- Discord Token ---
+load_dotenv()
+token = os.getenv("token")  # 確認 Render 環境變數也是 token（小寫）
 
-if not token:
-    raise ValueError("環境變數 'token' 未設定，請在 Render → Environment Variables 添加。")
+if token is None:
+    raise ValueError("Discord token not found! Please set 'token' in environment variables.")
 
-# ---------------------------
-# Discord Bot 設定
-# ---------------------------
+# --- Discord Bot Setup ---
 intents = discord.Intents.default()
 intents.message_content = True
+intents.guild_messages = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-n = 1
-
+n=1
 @bot.event
 async def on_message(message):
     global n
@@ -37,25 +34,23 @@ async def on_message(message):
         await message.channel.send("wrong")
 
     await bot.process_commands(message)
-
-# ---------------------------
-# Flask Web Server（給 Render 維持存活）
-# ---------------------------
-app = Flask(__name__)
+# --- Flask Web Service for Render ---
+app = Flask("")
 
 @app.route("/")
 def home():
-    return "Bot is running on Render!"
+    return "Bot is running!"
 
 def run_flask():
-    port = int(os.environ.get("PORT", 10000))  # Render 預設會給 PORT
+    port = int(os.environ.get("PORT"))
     print(f"Flask running on port {port}")
     app.run(host="0.0.0.0", port=port)
 
-Thread(target=run_flask, daemon=True).start()
+flask_thread = Thread(target=run_flask)
+flask_thread.daemon = True
+flask_thread.start()
 
-# ---------------------------
-# 啟動 Discord Bot
-# ---------------------------
+# --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+```
