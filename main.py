@@ -22,10 +22,12 @@ n=1
 @bot.event
 async def on_message(message):
     global n
+    content = message.content
     if message.author.bot:
         return
-
-    if str(n) in message.content.lower():
+    if message.channel.id != 1446132825127387288:
+        return
+    if str(n) == content:
         n += 1
         await message.add_reaction("✅")
     else:
@@ -53,4 +55,5 @@ flask_thread.start()
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
+
 
