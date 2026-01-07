@@ -4,111 +4,123 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
+import re
 
 # --- Discord Token ---
-# 載入 .env 檔案中的環境變數
 load_dotenv()
-# 從環境變數中取得 Discord Bot Token (Render 環境變數名稱要一致)
 token = os.getenv("token")
 
 if token is None:
-    # 如果找不到 token，拋出錯誤提醒使用者設定
     raise ValueError("Discord token not found! Please set 'token' in environment variables.")
 
 # --- Discord Bot Setup ---
-# 設定 Intenets 權限，確保可以讀取訊息內容和公會訊息
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guild_messages = True
 
-# 創建 Bot 實例，設定指令前綴為 "!"
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# --- 遊戲邏輯變數 (全局狀態) ---
-n = 1  # 遊戲中目前需要的數字
-last_user_id = None  # 上一個發送正確數字的使用者 ID
-# 請將此 ID 替換為您實際要進行遊戲的頻道 ID
-channel_id = 1446455483689992305
+# --- 遊戲邏輯變數 ---
+n = 57
+last_user_id = None
+channel_id = 1446455483689992305  # 監控的頻道 ID
+
+# --- 數學解析安全檢查 ---
+# 只允許數字、基本運算符號、括號與空格
+ALLOWED_CHARS = re.compile(r"^[0-9+\-*/().\s^]+$")
+
+def safe_eval(expr):
+    """
+    安全地計算數學表達式。
+    支援 ^ 轉為 Python 的 ** (次方)。
+    """
+    # 預處理：將 ^ 替換為 Python 的次方運算符
+    clean_expr = expr.replace('^', '**')
+    
+    # 檢查是否包含非法字元
+    if not ALLOWED_CHARS.match(clean_expr):
+        return None
+    
+    try:
+        # 使用 eval 但清空內置函數，僅允許純數學運算
+        result = eval(clean_expr, {"__builtins__": None}, {})
+        return result
+    except:
+        return None
 
 @bot.event
 async def on_message(message):
     global n
     global last_user_id
-    if message.content == "早安":
-        await message.channel.send(f"早安啊")
-    # 1. 忽略 Bot 自己的訊息
+
+    # 1. 基礎檢查：忽略機器人
     if message.author.bot:
         return
 
-    # 2. 忽略非指定頻道的訊息
+    # 2. 特殊對話回應 (不分頻道)
+    if message.content.strip() == "早安":
+        await message.channel.send("早安啊")
+        # 這裡不 return，除非你希望「早安」不能當作數字(例如當 n=1 時輸入早安不計分)
+        # 這裡通常建議 return 避免誤觸遊戲
+        return
+
+    # 3. 頻道檢查
     if message.channel.id != channel_id:
         return
 
     user_id = message.author.id
     content = message.content.strip()
 
-    # 4. 檢查訊息內容是否為純數字 (修正判斷錯誤問題)
-    if not content.isdigit():
-        # 如果訊息不是純數字，則忽略，不觸發錯誤重置
+    # 4. 嘗試解析數學公式
+    calculated_value = safe_eval(content)
+
+    # 如果解析失敗 (None)，代表這不是數字也不是數學公式，直接忽略不處理
+    if calculated_value is None:
         return
 
-    try:
-        # 將訊息內容轉換為整數
-        current_n = int(content)
-    except ValueError:
-        return # 再次確保轉換成功
-
-    # 3. 檢查是否為「自幹」行為 (同一個人連續發訊息)
+    # 5. 檢查是否為「自幹」行為
     if user_id == last_user_id:
         await message.add_reaction("❌")
-        await message.channel.send(f"森林叫你別自幹")
+        await message.channel.send("森林叫你別自幹")
         n = 1
         last_user_id = None
-        return  # 結束函數，不往下判斷數字
+        return
 
+    # 6. 判斷數字是否正確
+    try:
+        # 使用 float 比較，處理 10/2 = 5.0 的情況
+        if float(calculated_value) == float(n):
+            # 數字正確
+            n += 1
+            last_user_id = user_id
+            await message.add_reaction("✅")
+        else:
+            # 數字錯誤
+            n = 1
+            last_user_id = None
+            await message.add_reaction("❌")
+            await message.channel.send("錯了！你將受到森林的嚴厲斥責！")
+    except (ValueError, TypeError, OverflowError):
+        # 萬一運算結果出問題，忽略該訊息
+        return
 
-
-    # 5. 判斷數字是否正確
-    if current_n == n:
-        # 數字正確
-        n += 1  # 數字遞增
-        last_user_id = user_id  # 更新上一個發送者
-        await message.add_reaction("✅")
-        # 您可以在此處增加達到特定數字時的特殊訊息
-    else:
-        # 數字錯誤
-        correct_n = n
-        n = 1  # 數字重置為 1
-        last_user_id = None  # 重置自幹判定
-        await message.add_reaction("❌")
-        await message.channel.send(f"錯了！你將受到森林的嚴厲斥責！")
-
-    # 因為所有邏輯都在 on_message 處理，故不再呼叫 bot.process_commands(message)
-
-
-# --- Flask Web Service for Render 保活 (Keep-Alive) ---
+# --- Flask Web Service for Render 保活 ---
 app = Flask("")
 
 @app.route("/")
 def home():
-    # Render 會定期訪問此路由來保持 Bot 服務運行
     return "Bot is running!"
 
 def run_flask():
-    # 取得環境變數中的 PORT，預設為 5000
     port = int(os.environ.get("PORT", 5000))
     print(f"Flask running on port {port}")
-    # 啟動 Flask 伺服器
     app.run(host="0.0.0.0", port=port)
 
-# 在一個單獨的執行緒中啟動 Flask 服務，避免阻塞 Bot 的主線程
 flask_thread = Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
 
-
 # --- Run Discord Bot ---
 print("Starting Discord bot...")
 bot.run(token)
-
 
