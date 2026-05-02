@@ -21,7 +21,7 @@ intents.guild_messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # --- 遊戲邏輯變數 ---
-n = 57
+n = 1
 last_user_id = None
 channel_id = 1446455483689992305  # 監控的頻道 ID
 
