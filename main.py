@@ -8,6 +8,7 @@ import re
 
 # --- Discord Token ---
 load_dotenv()
+print("DEBUG: 目前抓到的環境變數有:", list(os.environ.keys()))  # 加這行
 token = os.getenv("token")
 if token is None:
     raise ValueError("Discord token not found! Please set 'token' in environment variables.")
